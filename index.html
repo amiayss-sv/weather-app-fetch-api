@@ -40,37 +40,26 @@
 
         </form>
 
-        <div class="card bg-white rounded-3xl shadow-2xl p-8 text-center">
+        <!-- Message de chargement -->
+        <p class="text-blue-600 font-semibold text-center mb-3"
+           id="loading" hidden>
+            Chargement...
+        </p>
 
-            <h2 class="cityDisplay text-2xl font-bold text-gray-800 mb-4">
-                Rabat
-            </h2>
+        <!-- Message d'erreur -->
+        <p class="text-red-500 font-semibold text-center mb-3 hidden"
+           id="mesgerror">
+            Veuillez saisir une ville
+        </p>
 
-            <p class="weatherEmoji text-6xl mb-4">
-                ☀️
+        <!-- Carte météo dynamique -->
+        <div
+            id="weatherCard"
+            class="card bg-white rounded-3xl shadow-2xl p-8 text-center"
+        >
+            <p class="text-gray-500">
+                Recherchez une ville pour afficher sa météo.
             </p>
-
-            <p class="tempDisplay text-5xl font-bold text-blue-700 mb-4">
-                21°C
-            </p>
-
-            <p class="descDisplay text-lg text-gray-600 capitalize mb-3">
-                Clear skies
-            </p>
-
-            <p class="humidityDisplay text-gray-600 mb-4">
-                Humidity : 99%
-            </p>
-
-            <p class="loadingDisplay hidden text-blue-600 font-semibold">
-                Chargement...
-            </p>
-
-            
-            <p class="errorDisplay text-red-500 font-semibold hidden" id="mesgerror">
-                Veuillez saisir une ville
-            </p>
-
         </div>
 
     </main>
