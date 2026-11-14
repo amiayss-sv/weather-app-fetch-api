@@ -41,8 +41,10 @@ const city = document.getElementById("city");
 const button = document.getElementById("btn");
 const messagerror = document.getElementById("mesgerror");
 const loading = document.getElementById("loading");
+const retryBtn = document.getElementById("retryBtn");      //button ressayer
 const weatherCard = document.getElementById("weatherCard");
-
+const forecastContainer = document.getElementById("forecastContainer");
+const forecastSection = document.getElementById("forecastSection");
 // Comparer les noms sans tenir compte des accents et majuscules
 function normaliser(texte) {
     return texte
@@ -64,6 +66,14 @@ async function getUserData(cityName) {
         const response = await fetch(
             `${url}${encodeURIComponent(cityName)}&count=1&language=fr&format=json`
         );
+        
+        if (response.status === 429) {
+    throw new Error("Limite de requêtes atteinte");
+            } 
+        
+        if (response.status === 500 || response.status === 503) {
+    throw new Error("Service de géolocalisation indisponible");
+            }    
 
         if (!response.ok) {
             throw new Error("Erreur lors de la recherche de la ville");
@@ -98,22 +108,118 @@ async function getUserData(cityName) {
 
         // 4. Deuxième API : récupérer la météo
 
-        const url2 = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto`;
+        const url2 = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=5`;
 
         const weatherResponse = await fetch(url2);
+        
+        if (weatherResponse.status === 429) {
+    throw new Error("Limite de requêtes atteinte");
+}
+        if (weatherResponse.status === 500 || weatherResponse.status === 503) {
+    throw new Error("Service météo indisponible");
+}  
 
         if (!weatherResponse.ok) {
             throw new Error("Erreur lors de la récupération de la météo");
         }
+ 
 
         // Transformer Response en JSON
 
         const weatherData = await weatherResponse.json();
 
-        console.log("Données météo :", weatherData);
+         console.log("Données météo :", weatherData);
+
+    //     console.log("Dates :", weatherData.daily.time);
+    //    console.log("Codes météo :", weatherData.daily.weather_code);
+    //    console.log("Températures max :", weatherData.daily.temperature_2m_max);
+    //    console.log("Températures min :", weatherData.daily.temperature_2m_min);
+    
+    // récupérer les provisions des 5 jours
+    const daily=weatherData.daily;
+
+    const previsions =daily.time.map((date,index)=>{
+
+        return{
+            date:date,
+            code:daily.weather_code[index],
+            temperatureMax:daily.temperature_2m_max[index],
+            temperatureMin:daily.temperature_2m_min[index]
+        };
+    });
+    console.log(previsions)
+
+    const previsionsHTML = previsions.map((jour) => {
 
 
-        // 5. Récupérer les données actuelles
+    // Récupérer l'icône et la description météo
+    const meteo = WEATHER_CODES[jour.code];
+   // date sous la forme (expl: mardi 10 novembre)
+    const dateFormatee = new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long"
+   }).format(new Date(jour.date + "T00:00:00"));
+
+      
+    // Vérifier les températures disponibles
+    const temperatureMin = jour.temperatureMin ?? "Donnée indisponible";
+    const temperatureMax = jour.temperatureMax ?? "Donnée indisponible";
+     
+   //console.log("Température minimale :", temperatureMin);
+   //console.log("Température maximale :", temperatureMax);
+    return `
+        <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 shadow-sm flex justify-between items-center">
+
+            <div>
+                <p class="font-bold text-gray-800">
+                   ${dateFormatee}
+                </p>
+
+                <p class="text-4xl my-3">
+                ${meteo.icon}
+                </p>
+
+                <p class="font-semibold text-gray-700">
+                ${meteo.label}
+                </p>
+
+
+                <div class="grid grid-cols-2 gap-4 mt-4">
+
+             <!-- Température minimale -->
+      <div>
+        <p class="text-sm text-gray-500">
+            Température minimale
+        </p>
+        <p class="text-lg font-bold text-blue-700">
+            ${temperatureMin} 
+        </p>
+       </div>
+
+             <!-- Température maximale -->
+       <div class="text-right">
+        <p class="text-sm text-gray-500">
+            Température maximale
+        </p>
+        <p class="text-lg font-bold text-blue-900">
+           ${temperatureMax}
+        </p>
+         </div>
+
+         </div>
+            </div>
+
+        </div>
+    `;
+});
+    // Regrouper toutes les cartes HTML dans une seule chaîne de caractères
+    const htmlFinal=previsionsHTML.join("")
+    // Afficher les cartes météo sur la page
+    forecastContainer.innerHTML=htmlFinal;
+    forecastSection.classList.remove("hidden");
+    
+        //  Récupérer les données actuelles
 
         const current = weatherData.current;
 
@@ -175,8 +281,13 @@ async function getUserData(cityName) {
 
         // Afficher le message d'erreur dans HTML
 
-        messagerror.textContent = error.message;
+        if (error instanceof TypeError) {
+    messagerror.textContent = "Vérifiez votre connexion Internet";
+} else {
+    messagerror.textContent = error.message;
+}
         messagerror.classList.remove("hidden");
+        retryBtn.classList.remove("hidden");
 
     } finally {
 
@@ -210,6 +321,8 @@ forme.addEventListener("submit", async (event) => {
         return;
     }
 
+    
+
     // Vérifier si le nom contient au moins 3 caractères
     if (cityName.length < 3) {
 
@@ -236,3 +349,15 @@ forme.addEventListener("submit", async (event) => {
     await getUserData(cityName);
 
 });
+
+// retryBtn.addEventListener("click", async () => {
+//     const cityName = city.value.trim();
+
+//     messagerror.classList.add("hidden");
+//     retryBtn.classList.add("hidden");
+
+//     loading.hidden = false;
+//     button.disabled = true;
+
+//     await getUserData(cityName);
+// });
