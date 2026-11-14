@@ -350,14 +350,14 @@ forme.addEventListener("submit", async (event) => {
 
 });
 
-// retryBtn.addEventListener("click", async () => {
-//     const cityName = city.value.trim();
+retryBtn.addEventListener("click", async () => {
+    const cityName = city.value.trim();
 
-//     messagerror.classList.add("hidden");
-//     retryBtn.classList.add("hidden");
+    messagerror.classList.add("hidden");
+    retryBtn.classList.add("hidden");
 
-//     loading.hidden = false;
-//     button.disabled = true;
+    loading.hidden = false;
+    button.disabled = true;
 
-//     await getUserData(cityName);
-// });
+    await getUserData(cityName);
+});
